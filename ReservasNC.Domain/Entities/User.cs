@@ -16,3 +16,4 @@ public class User
     public ICollection<Reserva> Reservas { get; set; } = new List<Reserva>();
     public ICollection<Reporte> Reportes { get; set; } = new List<Reporte>();
 }
+//comentario 3 Juan 
