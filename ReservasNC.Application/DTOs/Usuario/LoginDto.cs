@@ -8,6 +8,7 @@ namespace ReservasNC.Application.DTOs.Usuario
 {
     public class LoginDto
     {
+        //Clonacion prueba 2
         public required string Email { get; set; }
         public required string Contrasena { get; set; }
 
