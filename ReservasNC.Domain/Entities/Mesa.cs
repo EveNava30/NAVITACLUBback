@@ -8,6 +8,7 @@ namespace ReservasNC.Domain.Entities
 {
     public class Mesa
     {
+        //Prueba 1 Xime
         public int IdMesa { get; set; }
         public int NumeroMesa { get; set; }
         public int Capacidad { get; set; }
