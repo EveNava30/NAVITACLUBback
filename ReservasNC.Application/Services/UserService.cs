@@ -56,4 +56,5 @@ namespace ReservasNC.Application.Services
             return hash == hashedPassword;
         }
     }
+    // clonacion Juan Angel 
 }

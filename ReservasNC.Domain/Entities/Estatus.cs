@@ -14,4 +14,4 @@ namespace ReservasNC.Domain.Entities
         public ICollection<ReservaEstatus> ReservaEstatus { get; set; } = new List<ReservaEstatus>();
     }
 
-}
+} // Intento 2 Juan Angel 
