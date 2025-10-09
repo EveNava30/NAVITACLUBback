@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 
 namespace ReservasNC.Domain.Entities
 {
+
+    //comit de vale1
     public class Reporte
     {
         public int IdReporte { get; set; }
