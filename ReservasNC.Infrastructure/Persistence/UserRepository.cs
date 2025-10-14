@@ -14,16 +14,56 @@ namespace ReservasNC.Infrastructure.Persistence
             _context = context;
         }
 
-        public async Task<User?> GetByEmailAsync(string email)
+        public async Task<int> AddUserAsync(User user)
         {
-            return await _context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.Email == email);
+            var result = await _context.Users
+                .FromSqlInterpolated($"EXEC AddUser {user.Nombre}, {user.Email}, {user.Contrasena}, {user.Telefono}, {user.IdRole}")
+                .ToListAsync();
+
+            return result.FirstOrDefault()?.IdUser ?? 0;
         }
 
-        public async Task<User> AddAsync(User user)
+        public async Task<List<User>> GetUsersAsync()
         {
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
-            return user;
+            return await _context.Users
+                .FromSqlRaw("EXEC GetUsers")
+                .ToListAsync();
+        }
+
+        public async Task<User?> GetByIdAsync(int id)
+        {
+            var data = await _context.Users
+                .FromSqlInterpolated($"EXEC GetUserById {id}")
+                .ToListAsync();
+
+            return data.FirstOrDefault();
+        }
+
+        public async Task UpdateUserAsync(User user)
+        {
+            await _context.Database.ExecuteSqlInterpolatedAsync(
+                $"EXEC UpdateUser {user.IdUser}, {user.Nombre}, {user.Email}, {user.Telefono}, {user.IdRole}");
+        }
+
+        public async Task DeleteUserAsync(int id)
+        {
+            await _context.Database.ExecuteSqlInterpolatedAsync(
+                $"EXEC DeleteUser {id}");
+        }
+
+        public async Task<User?> LoginUserAsync(string email, string contrasena)
+        {
+            var data = await _context.Users
+                .FromSqlInterpolated($"EXEC LoginUser {email}, {contrasena}")
+                .ToListAsync();
+
+            return data.FirstOrDefault();
+        }
+
+        public async Task ChangePasswordAsync(string email, string contrasenaActual, string nuevaContrasena)
+        {
+            await _context.Database.ExecuteSqlInterpolatedAsync(
+                $"EXEC ChangePassword {email}, {contrasenaActual}, {nuevaContrasena}");
         }
     }
 }

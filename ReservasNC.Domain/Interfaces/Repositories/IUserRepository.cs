@@ -1,11 +1,15 @@
 ﻿using ReservasNC.Domain.Entities;
-using System.Threading.Tasks;
-
+using System.Threading.Tasks; 
 namespace ReservasNC.Domain.Interfaces.Repositories
 {
     public interface IUserRepository
     {
-        Task<User?> GetByEmailAsync(string email);
-        Task<User> AddAsync(User user);
+        Task<int> AddUserAsync(User user);
+        Task<List<User>> GetUsersAsync();
+        Task<User?> GetByIdAsync(int idUser);
+        Task UpdateUserAsync(User user);
+        Task DeleteUserAsync(int idUser);
+        Task<User?> LoginUserAsync(string email, string contrasena);
+        Task ChangePasswordAsync(string email, string contrasenaActual, string nuevaContrasena);
     }
 }
