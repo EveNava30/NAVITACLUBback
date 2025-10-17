@@ -1,35 +1,84 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using ReservasNC.Application.Services;
+using ReservasNC.Domain.Interfaces.Repositories;
+using ReservasNC.Domain.Interfaces.Services;
 using ReservasNC.Infrastructure.DataContexts;
+using ReservasNC.Infrastructure.Persistence;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Detectar ambiente actual
-var environment = builder.Environment.EnvironmentName;
-string? connectionString;
-
-if (environment == "Development")
-{
-    connectionString = builder.Configuration.GetConnectionString("SqlServerDev");
-}
-else if (environment == "Staging")
-{
-    connectionString = builder.Configuration.GetConnectionString("SqlServerTest");
-}
-else
-{
-    connectionString = builder.Configuration.GetConnectionString("SqlServerProd");
-}
-
-if (string.IsNullOrEmpty(connectionString))
-{
-    throw new InvalidOperationException($"No se encontró cadena de conexión para el ambiente {environment}");
-}
-
-// Configurar EF Core con SQL Server
+// ------------------------
+// Configuración de cadena de conexión
+// ------------------------
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(connectionString));
 
-// CORS (permitir acceso desde cualquier origen)
+// ------------------------
+// Inyección de dependencias
+// ------------------------
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUserService, UserService>();
+
+// ------------------------
+// Configurar JWT
+// ------------------------
+var jwtKey = "EstaEsUnaClaveSuperSeguraDe32Caracteres34"; // clave de 32+ caracteres
+var keyBytes = Encoding.UTF8.GetBytes(jwtKey);
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(keyBytes)
+        };
+    });
+
+// ------------------------
+// Servicios MVC / Controllers
+// ------------------------
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+
+// ------------------------
+// Swagger con soporte JWT
+// ------------------------
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "ReservasNC API", Version = "v1" });
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Ingresa 'Bearer' seguido de un espacio y tu token JWT."
+    });
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
+
+// ------------------------
+// CORS
+// ------------------------
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -38,29 +87,22 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader());
 });
 
-// Add services to the container
-builder.Services.AddControllers();
-
-// Agregar soporte Swagger / OpenAPI
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
 var app = builder.Build();
 
-// Configurar Swagger solo en Development (opcional)
+// ------------------------
+// Middleware
+// ------------------------
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-// Usar CORS
 app.UseCors("AllowAll");
-
 app.UseHttpsRedirection();
 
+app.UseAuthentication(); // Importante: primero autenticación
 app.UseAuthorization();
 
 app.MapControllers();
-
 app.Run();

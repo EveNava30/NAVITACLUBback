@@ -1,60 +1,77 @@
-﻿using ReservasNC.Domain.Entities;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.IdentityModel.Tokens;
+using ReservasNC.Domain.Entities;
 using ReservasNC.Domain.Interfaces.Repositories;
 using ReservasNC.Domain.Interfaces.Services;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace ReservasNC.Application.Services
 {
     public class UserService : IUserService
     {
         private readonly IUserRepository _userRepository;
+        private readonly string _jwtSecret = "EstaEsUnaClaveSuperSeguraDe32Caracteres34";
+        private readonly int _jwtLifespan = 60; // duración en minutos
 
         public UserService(IUserRepository userRepository)
         {
             _userRepository = userRepository;
         }
 
-        public async Task<User> RegisterUserAsync(string nombre, string email, string password, int idRole)
+        // ------------------------------
+        // LOGIN + TOKEN JWT
+        // ------------------------------
+        public async Task<(User? user, string? token)> LoginUserAsync(string email, string contrasena)
         {
-            var existingUser = await _userRepository.GetByEmailAsync(email);
-            if (existingUser != null)
-                throw new Exception("El correo ya está registrado");
+            var user = await _userRepository.LoginUserAsync(email, contrasena);
+            if (user == null) return (null, null);
 
-            var hashedPassword = HashPassword(password);
+            var token = GenerateJwtToken(user);
+            return (user, token);
+        }
 
-            var user = new User
+        private string GenerateJwtToken(User user)
+        {
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSecret));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var claims = new[]
             {
-                Nombre = nombre,
-                Email = email,
-                Contrasena = hashedPassword,
-                IdRole = idRole,
-                FechaUltimaModificacion = DateTime.UtcNow
+                new Claim(JwtRegisteredClaimNames.Sub, user.Email),
+                new Claim("idUser", user.IdUser.ToString()),
+                new Claim("nombre", user.Nombre),
+                new Claim("idRole", user.IdRole.ToString())
             };
 
-            return await _userRepository.AddAsync(user);
+            var token = new JwtSecurityToken(
+                claims: claims,
+                expires: DateTime.UtcNow.AddMinutes(_jwtLifespan),
+                signingCredentials: creds
+            );
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        public async Task<User?> LoginAsync(string email, string password)
+        // ------------------------------
+        // CRUD Y CAMBIO DE CONTRASEÑA
+        // ------------------------------
+        public async Task<User> AddUserAsync(User user)
         {
-            var user = await _userRepository.GetByEmailAsync(email);
-            if (user == null) return null;
-
-            return VerifyPassword(password, user.Contrasena) ? user : null;
+            var newUserId = await _userRepository.AddUserAsync(user);
+            user.IdUser = newUserId;
+            return user;
         }
 
-        private string HashPassword(string password)
-        {
-            using var sha = SHA256.Create();
-            var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(password));
-            return Convert.ToBase64String(bytes);
-        }
+        public async Task<List<User>> GetUsersAsync() => await _userRepository.GetUsersAsync();
 
-        private bool VerifyPassword(string password, string hashedPassword)
-        {
-            var hash = HashPassword(password);
-            return hash == hashedPassword;
-        }
+        public async Task<User?> GetByIdAsync(int idUser) => await _userRepository.GetByIdAsync(idUser);
+
+        public async Task UpdateUserAsync(User user) => await _userRepository.UpdateUserAsync(user);
+
+        public async Task DeleteUserAsync(int idUser) => await _userRepository.DeleteUserAsync(idUser);
+
+        public async Task ChangePasswordAsync(string email, string contrasenaActual, string nuevaContrasena) =>
+            await _userRepository.ChangePasswordAsync(email, contrasenaActual, nuevaContrasena);
     }
-    // clonacion Juan Angel 
 }

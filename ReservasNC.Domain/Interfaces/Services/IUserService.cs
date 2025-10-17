@@ -5,7 +5,15 @@ namespace ReservasNC.Domain.Interfaces.Services
 {
     public interface IUserService
     {
-        Task<User> RegisterUserAsync(string nombre, string email, string password, int idRole);
-        Task<User?> LoginAsync(string email, string password);
+        Task<User> AddUserAsync(User user);
+        Task<List<User>> GetUsersAsync();
+        Task<User?> GetByIdAsync(int idUser);
+        Task UpdateUserAsync(User user);
+        Task DeleteUserAsync(int idUser);
+
+        //  Login con token
+        Task<(User? user, string? token)> LoginUserAsync(string email, string contrasena);
+
+        Task ChangePasswordAsync(string email, string contrasenaActual, string nuevaContrasena);
     }
 }
