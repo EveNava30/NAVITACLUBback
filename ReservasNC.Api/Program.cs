@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using ReservasNC.Api.Hubs;
+using ReservasNC.Application.Interfaces.Services;
 using ReservasNC.Application.Services;
 using ReservasNC.Domain.Interfaces.Repositories;
 using ReservasNC.Domain.Interfaces.Services;
@@ -23,6 +25,14 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // ------------------------
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
+
+// ------------------------
+//  Agregar SignalR
+// ------------------------
+builder.Services.AddSignalR();
+builder.Services.AddScoped<IReservaRepository, ReservaRepository>();
+builder.Services.AddScoped<IReservaService, ReservaService>();
+
 
 // ------------------------
 // Configurar JWT
@@ -97,12 +107,16 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
-app.UseCors("AllowAll");
+app.UseHttpsRedirection();
 app.UseHttpsRedirection();
 
+app.UseCors("AllowAll");
 app.UseAuthentication(); // Importante: primero autenticación
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapHub<ReservaHub>("/reservasHub");
+
+
 app.Run();
