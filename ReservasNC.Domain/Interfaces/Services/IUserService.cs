@@ -11,9 +11,14 @@ namespace ReservasNC.Domain.Interfaces.Services
         Task UpdateUserAsync(User user);
         Task DeleteUserAsync(int idUser);
 
-        //  Login con token
+        //  LOGIN + JWT opcional
         Task<(User? user, string? token)> LoginUserAsync(string email, string contrasena);
 
+        //  CAMBIO DE CONTRASEÑA
         Task ChangePasswordAsync(string email, string contrasenaActual, string nuevaContrasena);
+
+        // RECUPERACIÓN DE CONTRASEÑA
+        Task ForgotPasswordAsync(string email);
+        Task ResetPasswordAsync(string token, string nuevaContrasena);
     }
 }

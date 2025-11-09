@@ -10,5 +10,8 @@ public class User
     public string Telefono { get; set; }         // Teléfono (opcional)
     public int IdRole { get; set; }              // FK a Rol
     public DateTime FechaUltimaModificacion { get; set; }  // Control de actualización
+
+    // Campos nuevos para recuperación de contraseña
+    public string? ResetToken { get; set; }
+    public DateTime? TokenExpira { get; set; }
 }
-//comentario 3 Juan 
