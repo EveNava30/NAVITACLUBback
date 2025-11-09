@@ -1,11 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using ReservasNC.Application.Services;
+using ReservasNC.Application.DTOs;
 using ReservasNC.Domain.Entities;
+using ReservasNC.Domain.Interfaces.Services;
 
 namespace ReservasNC.Api.Controllers
 {
-
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
@@ -18,8 +18,12 @@ namespace ReservasNC.Api.Controllers
             _userService = userService;
         }
 
+        // ------------------------------------------------------------
+        // 🧩 CRUD DE USUARIOS
+        // ------------------------------------------------------------
+        [AllowAnonymous]
         [HttpPost("add")]
-        public async Task<ActionResult<User>> AddUser(User user)
+        public async Task<ActionResult<User>> AddUser([FromBody] User user)
         {
             var createdUser = await _userService.AddUserAsync(user);
             return CreatedAtAction(nameof(GetUserById), new { id = createdUser.IdUser }, createdUser);
@@ -57,14 +61,20 @@ namespace ReservasNC.Api.Controllers
             return NoContent();
         }
 
+        // ------------------------------------------------------------
+        // 🔐 LOGIN Y CAMBIO DE CONTRASEÑA
+        // ------------------------------------------------------------
         [AllowAnonymous]
         [HttpPost("login")]
-        public async Task<ActionResult> Login(string email, string contrasena)
+        public async Task<ActionResult> Login([FromBody] LoginRequest request)
         {
-            var (user, token) = await _userService.LoginUserAsync(email, contrasena);
+            if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Contrasena))
+                return BadRequest(new { mensaje = "Correo y contraseña son obligatorios." });
+
+            var (user, token) = await _userService.LoginUserAsync(request.Email.Trim(), request.Contrasena.Trim());
 
             if (user == null)
-                return Unauthorized("Correo o contraseña incorrectos.");
+                return Unauthorized(new { mensaje = "Correo o contraseña incorrectos." });
 
             return Ok(new
             {
@@ -74,12 +84,52 @@ namespace ReservasNC.Api.Controllers
             });
         }
 
+        // DTO para login
+        public class LoginRequest
+        {
+            public string Email { get; set; } = string.Empty;
+            public string Contrasena { get; set; } = string.Empty;
+        }
 
         [HttpPost("change-password")]
-        public async Task<IActionResult> ChangePassword(string email, string contrasenaActual, string nuevaContrasena)
+        public async Task<IActionResult> ChangePassword([FromForm] string email, [FromForm] string contrasenaActual, [FromForm] string nuevaContrasena)
         {
             await _userService.ChangePasswordAsync(email, contrasenaActual, nuevaContrasena);
-            return NoContent();
+            return Ok(new { mensaje = "Contraseña actualizada correctamente." });
+        }
+
+        // ------------------------------------------------------------
+        // 📧 RECUPERACIÓN DE CONTRASEÑA
+        // ------------------------------------------------------------
+        [AllowAnonymous]
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotRequest req)
+        {
+            await _userService.ForgotPasswordAsync(req.Email);
+            return Ok(new { mensaje = "Si el correo existe, se enviaron las instrucciones." });
+        }
+
+        [AllowAnonymous]
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto request)
+        {
+            try
+            {
+                await _userService.ResetPasswordAsync(request.Token, request.NuevaContrasena);
+                return Ok(new { mensaje = "La contraseña se ha restablecido correctamente." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { mensaje = ex.Message });
+            }
+        }
+
+        // ------------------------------------------------------------
+        // DTO PARA RECUPERACIÓN DE CONTRASEÑA
+        // ------------------------------------------------------------
+        public class ForgotRequest
+        {
+            public string Email { get; set; } = string.Empty;
         }
     }
 }

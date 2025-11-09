@@ -9,6 +9,7 @@ using ReservasNC.Domain.Interfaces.Repositories;
 using ReservasNC.Domain.Interfaces.Services;
 using ReservasNC.Infrastructure.DataContexts;
 using ReservasNC.Infrastructure.Persistence;
+using ReservasNC.Infrastructure.Services; // <- EmailService
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,16 +24,17 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // ------------------------
 // Inyección de dependencias
 // ------------------------
+// Repositorios y servicios principales
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
 
-// ------------------------
-//  Agregar SignalR
-// ------------------------
+// Servicio de email (implementación en Infrastructure)
+builder.Services.AddScoped<IEmailService, EmailService>();
+
+// Otros repos y servicios (SignalR, reservas, etc.)
 builder.Services.AddSignalR();
 builder.Services.AddScoped<IReservaRepository, ReservaRepository>();
 builder.Services.AddScoped<IReservaService, ReservaService>();
-
 
 // ------------------------
 // Configurar JWT
@@ -107,8 +109,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-app.UseHttpsRedirection();
-app.UseHttpsRedirection();
+
+app.UseHttpsRedirection(); // una sola vez
 
 app.UseCors("AllowAll");
 app.UseAuthentication(); // Importante: primero autenticación
@@ -117,6 +119,5 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.MapHub<ReservaHub>("/reservasHub");
-
 
 app.Run();
