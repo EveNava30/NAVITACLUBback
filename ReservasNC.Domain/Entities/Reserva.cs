@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ReservasNC.Domain.Entities
+﻿namespace ReservasNC.Domain.Entities
 {
     public class Reserva
     {
@@ -15,6 +9,9 @@ namespace ReservasNC.Domain.Entities
         public Mesa Mesa { get; set; } = null!;
         public string? CodigoQR { get; set; }
         public DateTime FechaHora { get; set; }
+
+       // public TimeSpan HoraInicio { get; set; }          // Hora de inicio de la reserva
+       // public int Duracion { get; set; }
         public DateTime FechaUltimaModificacion { get; set; }
         public ICollection<ReservaEstatus> HistorialEstatus { get; set; } = new List<ReservaEstatus>();
     }

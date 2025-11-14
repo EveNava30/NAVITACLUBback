@@ -1,17 +1,17 @@
-using ReservasNC.Domain.Entities;
-
 namespace ReservasNC.Domain.Entities;
 public class User
 {
-    public int IdUser { get; set; }               // PK
-    public string Nombre { get; set; }           // Nombre completo
-    public string Email { get; set; }            // Email único
-    public string Contrasena { get; set; }       // Contraseña
-    public string Telefono { get; set; }         // Teléfono (opcional)
-    public int IdRole { get; set; }              // FK a Rol
-    public DateTime FechaUltimaModificacion { get; set; }  // Control de actualización
+    public int IdUser { get; set; }           
+    public string Nombre { get; set; }           
+    public string Email { get; set; }         
+    public string Contrasena { get; set; }       
+    public string Telefono { get; set; }         
+    public int IdRole { get; set; }              
+    public DateTime FechaUltimaModificacion { get; set; }  
 
     // Campos nuevos para recuperación de contraseña
     public string? ResetToken { get; set; }
     public DateTime? TokenExpira { get; set; }
+    public string? NombreRol { get; set; }
+
 }

@@ -1,13 +1,9 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
-using ReservasNC.Api.Hubs;
+using ReservasNC.Application.Interfaces;
 using ReservasNC.Application.Interfaces.Services;
 using ReservasNC.Application.Services;
-using ReservasNC.Domain.Interfaces.Repositories;
-using ReservasNC.Domain.Interfaces.Services;
-using ReservasNC.Infrastructure.DataContexts;
+using ReservasNC.Infrastructure.Notifications;
 using ReservasNC.Infrastructure.Persistence;
 using ReservasNC.Infrastructure.Services; // <- EmailService
 using System.Text;
@@ -35,6 +31,19 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddSignalR();
 builder.Services.AddScoped<IReservaRepository, ReservaRepository>();
 builder.Services.AddScoped<IReservaService, ReservaService>();
+
+// ------------------------
+// Repositorios y servicios de Restaurante 
+// ------------------------
+builder.Services.AddScoped<IRestauranteRepository, RestauranteRepository>();
+builder.Services.AddScoped<IRestauranteService, RestauranteService>();
+
+
+//irebase admin (ruta al json)
+//FirebaseInitializer.Init(Configuration["Firebase:CredentialPath"]);
+
+builder.Services.AddScoped<IFcmTokenRepository, FcmTokenRepository>();
+builder.Services.AddScoped<INotificationService, FcmNotificationService>();
 
 // ------------------------
 // Configurar JWT
@@ -104,20 +113,20 @@ var app = builder.Build();
 // ------------------------
 // Middleware
 // ------------------------
-if (app.Environment.IsDevelopment())
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "ReservasNC API v1");
+    c.RoutePrefix = string.Empty; // <-- hace que Swagger se cargue en la raíz "/"
+});
 
-app.UseHttpsRedirection(); // una sola vez
+app.UseHttpsRedirection();
 
 app.UseCors("AllowAll");
-app.UseAuthentication(); // Importante: primero autenticación
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
 app.MapHub<ReservaHub>("/reservasHub");
 
 app.Run();
