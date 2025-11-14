@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ReservasNC.Domain.Entities
+﻿namespace ReservasNC.Domain.Entities
 {
     public class Estatus
     {
@@ -14,4 +8,4 @@ namespace ReservasNC.Domain.Entities
         public ICollection<ReservaEstatus> ReservaEstatus { get; set; } = new List<ReservaEstatus>();
     }
 
-} // Intento 2 Juan Angel 
+}
